@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:lottie/lottie.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 void main() {
   runApp(MyApp());
@@ -12,19 +14,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
         primarySwatch: Colors.blue,
-        // This makes the visual density adapt to the platform that you run
-        // the app on. For desktop platforms, the controls will be smaller and
-        // closer together (more dense) than on mobile platforms.
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: MyHomePage(title: 'Flutter Demo Home Page'),
@@ -34,16 +24,6 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   final String title;
 
   @override
@@ -51,51 +31,103 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  List<String> items = ["1", "2", "3", "4", "5", "6", "7", "8"];
+  RefreshController _refreshController =
+      RefreshController(initialRefresh: false);
 
-  void _incrementCounter() {
+  void _onRefresh() async{
+    // monitor network fetch
+    await Future.delayed(Duration(milliseconds: 1000));
+    // if failed,use refreshFailed()
+    _refreshController.refreshCompleted();
+  }
+
+  void _onLoading() async{
+    // monitor network fetch
+    await Future.delayed(Duration(milliseconds: 1000));
+    // if failed,use loadFailed(),if no data return,use LoadNodata()
+    items.add((items.length+1).toString());
+    if(mounted)
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+
     });
+    _refreshController.loadComplete();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    Widget refreshing = Lottie.asset('assets/if_refresh.json',
+      height: 50
+    );
     return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: new Padding(
-        padding: const EdgeInsets.all(4.0),
-        child: new StaggeredGridView.countBuilder(
-          crossAxisCount: 6,
-          itemCount: 8,
-          itemBuilder: (BuildContext context, int index) => new Container(
-              color: Colors.green,
-              child: new Center(
-                child: new CircleAvatar(
-                  backgroundColor: Colors.white,
-                  child: new Text('$index'),
-                ),
-              )),
-          staggeredTileBuilder: (int index) =>
-              new StaggeredTile.count(3, index.isEven ? 2 : 1),
-          mainAxisSpacing: 6.0,
-          crossAxisSpacing: 6.0,
-        ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: 1,
+            child: SmartRefresher(
+              enablePullDown: true,
+              enablePullUp: true,
+              header: CustomHeader(
+                refreshStyle: RefreshStyle.Follow,
+                builder: (BuildContext context,RefreshStatus status) {
+                  bool swimming = (status == RefreshStatus.refreshing || status == RefreshStatus.completed);
+                  return Container(
+                    height: 50,
+                    child: Stack(
+                      alignment: AlignmentDirectional.center,
+                      children: [
+                        swimming ? SizedBox() : Image.asset('assets/fun_home_pull_down.png',
+                            height: 50,
+                        ),
+                        Offstage(
+                          offstage: !swimming,
+                          child: refreshing,
+                        ),
+                      ]
+                    )
+                  );
+                }
+              ),
+              footer: CustomFooter(
+                builder: (BuildContext context,LoadStatus mode){
+                  Widget body ;
+                  Widget loading = Lottie.asset('assets/loading.json',
+                    height: 34
+                  );
+                  if(mode==LoadStatus.idle){
+                    body = loading;
+                  }
+                  else if(mode==LoadStatus.loading){
+                    body = loading;
+                  }
+                  else if(mode == LoadStatus.failed){
+                    body = Text("加载失败！点击重试！");
+                  }
+                  else if(mode == LoadStatus.canLoading){
+                    body = loading;
+                  }
+                  else{
+                    body = Text("没有更多数据了!");
+                  }
+                  return Container(
+                    height: 55.0,
+                    child: Center(child:body),
+                  );
+                },
+              ),
+              controller: _refreshController,
+              onRefresh: _onRefresh,
+              onLoading: _onLoading,
+              child: ListView.builder(
+                physics: BouncingScrollPhysics(),
+                itemBuilder: (c, i) => Card(child: Center(child: Text(items[i]))),
+                itemExtent: 100.0,
+                itemCount: items.length,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
