@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'pull.dart';
 import 'tabpage.dart';
 
 void main() {
@@ -24,9 +25,11 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.grey,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: Container(
-        color: Colors.white,
-        child: TabPage()
+      home: Scaffold(
+        body: Container(
+          color: Colors.white,
+          child: TabPage()
+        ),
       ),
     );
   }

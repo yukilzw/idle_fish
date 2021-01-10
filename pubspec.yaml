@@ -39,6 +39,4 @@ flutter:
   uses-material-design: true
 
   assets:
-  - assets/loading.json
-  - assets/if_refresh.json
-  - assets/fun_home_pull_down.png
+  - assets/
