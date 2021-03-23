@@ -74,12 +74,16 @@ class _TabPage extends State<TabPage> {
   }
 
   List<Widget> _renderPage() {
-    return testNav.map((text) => Container(
-      color: Colors.blue,
-      child: Center(
-        child: Text(text),
-      ),
-    )).toList();
+    List colors = [Colors.pinkAccent, Colors.blue, Colors.red, Colors.green, Colors.yellow, Colors.pink, Colors.black, Colors.purple, Colors.deepOrange];
+    return testNav.asMap().map((i, text) {
+      return MapEntry(i, Container(
+          color: colors[i],
+          child: Center(
+            child: Text(text),
+          ),
+        )
+      );
+    }).values.toList();
   }
 
   @override
